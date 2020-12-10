@@ -3,30 +3,105 @@
 
 using namespace std;
 
-class Item {
+// Global
+// Contains attributes common to all classes in the engine
+class Global {
 private:
 	string name;
-	string owner;
-	unsigned int health;
-	unsigned int weight;
-	unordered_map<string, bool> properties;
 public:
-	Item(string name, unsigned int health, unsigned int weight, string owner, bool equippable, bool drinkable, bool edible) {
-		this->name = name;
-		this->owner = owner;
-		this->health = health;
-		this->weight = weight;
-		properties["equippable"] = equippable;
-		properties["drinkable"] = drinkable;
-		properties["edible"] = edible;
+	virtual string& getName() {
+		return name;
 	}
-	string& getName() {
-		return this->name;
-	}
-	void 
 };
 
-class Location {
+// Use, throw, drop, description, eat, combine
+// Sharp, metal, 
+class Item : Global {
+private:
+	string name;
+	string description;
+	unsigned int health;
+	unsigned int weight;
+public:
+	Item(string name, unsigned int health, unsigned int weight, string description) {
+		this->name = name;
+		this->health = health;
+		this->weight = weight;
+		this->description = description;
+	}
+	virtual string& getName() {
+		return this->name;
+	}
+};
+
+// There are four main types of objects
+// Characters: PCs and NPCs who inhabit locations, capable of interactins with the world and carrying items
+// Items: Can be equipped by characters and potentially used
+// Objects: Can't be equipped by characters, but can be interacted with
+// Locations: Places that contain characters, items, and objects
+
+class Inconsumable : Item {
+
+};
+
+class Consumable : Item {
+
+};
+
+class Equipment : Item {
+
+};
+
+class Weapon : Equipment {
+
+};
+
+class Melee : Weapon {
+
+};
+
+class Ranged : Weapon {
+
+};
+
+class Headpiece : Equipment {
+
+};
+
+class Chestpiece : Equipment {
+
+};
+
+class Legpiece : Equipment {
+
+};
+
+class Gloves : Equipment {
+
+};
+
+class Boots : Equipment {
+
+};
+
+class Drink : Consumable {
+
+};
+
+class Food : Consumable {
+
+};
+
+class Object : Global {
+private:
+	string name;
+	string description;
+	unsigned int health;
+	unsigned int weight;
+
+};
+
+class Location : Global {
 private:
 	string name;
 	vector<Location*> neighbors;
@@ -34,6 +109,9 @@ private:
 public:
 	Location(string name) {
 		this->name = name;
+	}
+	virtual const vector<Location*>& getNeighbors() {
+		return neighbors;
 	}
 	virtual void showNeighbors() {
 		for (auto& el : neighbors) {
@@ -69,48 +147,121 @@ public:
 	}
 };
 
-class Character {
+class Character : Global {
 private:
 	string name;
-	signed int health;
+	unsigned int health;
 	Location* loc;
-	vector<string> status;
 	vector<Item*> inventory;
+	vector<string> status;
 public:
-	Character(string name, signed int health, Location* loc) {
+	Character(string& name, unsigned int& health, Location* loc) {
 		this->name = name;
 		this->health = health;
 		this->loc = loc;
 	}
-	virtual void incHP(signed int hp) {
-		this->health += hp;
+
+	// Increase character health
+	virtual void incHP(unsigned int inc) {
+		health += inc;
 	}
-	virtual void move(Location* location) {
-		this->loc = location;
+
+	// Decrease character health
+	virtual void decHP(unsigned int dec) {
+		if (dec > health) {
+			health = 0;
+		}
+		else {
+			health -= dec;
+		}
 	}
-	virtual void equip(Item* item) {
+
+	// Move to a new location
+	virtual void move(Location* newLoc) {
+		// You're in the location already
+		if (newLoc == loc) {
+
+		}
+		// Location is a neighbor
+		else {
+			for (const auto& el : loc->getNeighbors()) {
+				if (el == newLoc) {
+					loc = el;
+				}
+			}
+		}
+		// Location is inaccessible
+
+		
+	}
+
+	// Add an item to the inventory
+	virtual void pickUp(Item* item) {
+		for (const auto& el : inventory) {
+			if (item == el) {
+				cerr << "Redundant attempt to add item to inventory in PickUp";
+				return;
+			}
+		}
 		this->inventory.push_back(item);
 	}
+
+	// Print the inventory to stdout
 	virtual void showInventory() {
 		for (auto el : this->inventory) {
 			cout << el->getName() << endl;
 		}
 	}
-	virtual string& getLoc() {
-		return this->loc->getName();
+
+	// Return the location of the character
+	virtual Location* getLoc() {
+		return loc;
 	}
+
+	// Return the name of the character
 	virtual string& getName() {
 		return this->name;
 	}
+
+	// Throw an item at something
+	virtual void throwItem(Item* item, Location* loc){
+
+	}
+
+	virtual void throwItem(Item* item, Character* character) {
+
+	}
+
+	virtual void throwItem(Item* item, Item* destItem) {
+
+	}
 };
 
-class World {
+class PC : Character {
+
+};
+
+class NPC : Character {
+
+};
+
+// World
+// Contains attributes of the world, in particular keeping track of
+// locations and items
+class World : Global {
 private:
+	string name = "Wrightville";
 	signed int time = 0;
+
+	// Contains flags to keep track of various events around the world
 	unordered_map<string, bool> flags;
 
+	// Maps item names to Item objects
+	// Used as a source to copy new items; items in this list should not
+	// be referenced directly as there may be duplicates
+
 	unordered_map<string, Item*> itemMap =
-	{ {"Library", new Item("Library")} };
+	{ {"Water Bottle", new Item("Water Bottle", 5, 1, "A bottle of dihydrogen monoxide")} };
 
 	unordered_map<string, Location*> locMap =
 	{ {"Library", new Location("Library")},
@@ -118,13 +269,13 @@ private:
 	  {"Tunnel", new Location("Tunnel")} };
 
 public:
-	void setFlag(string flag, bool val) {
+	void setFlag(string& flag, bool val) {
 		flags[flag] = val;
 	}
 	void incTime(signed int time) {
 		this->time += time;
 	}
-	Location* getLoc(string loc) {
+	Location* getLoc(string& loc) {
 		return this->locMap[loc];
 	}
 	void linkLoc(string startLoc, string endLoc, bool twoWay = false) {

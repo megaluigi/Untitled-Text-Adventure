@@ -58,11 +58,12 @@ void parseCommand(string& cmd) {
 int main()
 {
     cout << "Welcome to \"A Fright to Remember\", an experimental text adventure from Wrought Studios\n"
-         << "This game is very early in development and full of bugs, but I hope you still enjoy it!\n";
+         << "This game is very early in development and full of bugs, but I hope you still enjoy it!\n"
+         << "Type \"help\" to list all available commands\n";
 
     string command;
     World* world = new World();
-    Character* pc = new Character("Donny", 100, world->getLoc("Library"));
+    //Character* pc = new Character("Donny", 100, world->getLoc("Library"));
     initWorld("Donny");
 
     while (true) {
